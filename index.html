@@ -865,7 +865,7 @@ function showLock(){
   locked=true;
   const L=document.createElement('div');L.id='lock';L.className='lock';L.setAttribute('role','dialog');L.setAttribute('aria-modal','true');
   L.innerHTML=`<div class="lk"><span class="lkb">${ic('lock')}</span><h1>کلاس‌های فوق‌برنامه</h1><p>برای ورود، رمز عبور را وارد کنید</p>
-  <input id="lp" type="password" autocomplete="current-password" aria-label="رمز عبور" placeholder="رمز عبور" enterkeyhint="go">
+  <input id="lp" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" aria-label="رمز عبور" placeholder="رمز عبور" enterkeyhint="go">
   <div class="lkm" id="lm" role="alert"></div><button class="btn block" id="lg">ورود</button></div>`;
   document.body.appendChild(L);
   const i=L.querySelector('#lp'),m=L.querySelector('#lm'),b=L.querySelector('#lg'),box=L.querySelector('.lk');
@@ -887,15 +887,15 @@ document.addEventListener('visibilitychange',()=>{
 function pwDialog(kind,done){
   const cur=kind!=='set',nw=kind!=='remove';
   const w=modal(`<b class="ttl">${ic('lock')}${{set:'فعال‌سازی رمز',change:'تغییر رمز',remove:'حذف رمز'}[kind]}</b>
-  ${cur?'<label>رمز فعلی</label><input id="pc0" type="password" autocomplete="current-password">':''}
-  ${nw?'<label>رمز جدید (حداقل ۴ کاراکتر)</label><input id="pc1" type="password" autocomplete="new-password"><label>تکرار رمز جدید</label><input id="pc2" type="password" autocomplete="new-password">':''}
+  ${cur?'<label>رمز فعلی</label><input id="pc0" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password">':''}
+  ${nw?'<label>رمز جدید (حداقل ۴ رقم)</label><input id="pc1" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password"><label>تکرار رمز جدید</label><input id="pc2" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password">':''}
   <div class="row"><button class="btn${kind==='remove'?' red':''}" id="ok">تأیید</button><button class="btn gr" id="no">انصراف</button></div>`);
   const q=i=>w.querySelector('#'+i);
   q('no').onclick=()=>w.remove();
   q('ok').onclick=async()=>{
     if(cur&&!(await pwCheck(q('pc0').value))){toast('رمز فعلی درست نیست');return}
     if(nw){const a=q('pc1').value,b=q('pc2').value;
-      if(pwNorm(a).length<4){toast('رمز باید حداقل ۴ کاراکتر باشد');return}
+      if(pwNorm(a).length<4){toast('رمز باید حداقل ۴ رقم باشد');return}
       if(a!==b){toast('تکرار رمز با رمز جدید یکی نیست');return}
       await pwSet(a);toast(kind==='set'?'رمز فعال شد':'رمز تغییر کرد')}
     else{pwClear();toast('رمز حذف شد')}
@@ -915,6 +915,13 @@ function secInit(box){
   };
   draw();
 }
+
+// آفلاین: ثبت Service Worker و درخواست ذخیره‌سازی پایدار
+if('serviceWorker' in navigator&&location.protocol!=='file:'){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(_){}
+
+// رمز: فقط عدد (فارسی/عربی هم به انگلیسی تبدیل می‌شود)
+document.addEventListener('input',e=>{const t=e.target;if(t&&t.type==='password'){const v=unfa(t.value).replace(/\D/g,'');if(v!==t.value)t.value=v}});
 
 DB.load();
 history.replaceState({p:'home'},'');
